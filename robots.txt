@@ -1,0 +1,9 @@
+# robots.txt for ShopMS
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://shopmsdatabase.github.io/shopms/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
