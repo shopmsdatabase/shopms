@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShopMS — The complete shop management system</title>
+<meta name="description" content="Stock, EPOS billing, receipt printing, customer ledgers, purchases, payroll, accounts and reports. Works fully offline with multiple devices in sync. Free 3-month trial.">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{
+ --bg:#070709;--bg2:#0C0C12;--card:#101018;--card2:#16161F;
+ --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);
+ --pri:#56CCF2;--pur:#8B5CF6;--grn:#00D26A;--org:#FF9F43;--red:#FF6B6B;
+ --w:#fff;--g:#7C7C88;--l:#B4B4BE;
+ --a1:#6C3FA6;--a2:#3E9E9E;--a3:#A8503A;--ink:#131319;--pap:#FBF9F3;
+ --f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+ --fb:"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;
+ --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+ --e:cubic-bezier(.2,.7,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--w);font-family:var(--f);line-height:1.62;
+ -webkit-font-smoothing:antialiased;overflow-x:hidden;letter-spacing:-.01em}
+html[lang="bn"] body{font-family:var(--fb)}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 clamp(20px,5vw,48px)}
+.rv{opacity:0;transform:translateY(22px);transition:opacity .8s var(--e),transform .8s var(--e)}
+/* Staggered reveal for grouped items — chips, tiles, cards. Children start
+   offset and settle one after another, so a block of nine items arrives as a
+   sequence rather than a single dead lump. */
+.stag>*{opacity:0;transform:translateY(15px) scale(.985);
+ transition:opacity .5s var(--e),transform .5s var(--e)}
+.stag.in>*{opacity:1;transform:none}
+.stag.in>*:nth-child(1){transition-delay:.02s}
+.stag.in>*:nth-child(2){transition-delay:.06s}
+.stag.in>*:nth-child(3){transition-delay:.1s}
+.stag.in>*:nth-child(4){transition-delay:.14s}
+.stag.in>*:nth-child(5){transition-delay:.18s}
+.stag.in>*:nth-child(6){transition-delay:.22s}
+.stag.in>*:nth-child(7){transition-delay:.26s}
+.stag.in>*:nth-child(8){transition-delay:.3s}
+.stag.in>*:nth-child(9){transition-delay:.34s}
+.stag.in>*:nth-child(10){transition-delay:.38s}
+.stag.in>*:nth-child(11){transition-delay:.42s}
+.stag.in>*:nth-child(12){transition-delay:.46s}
+/* headings get a subtle rise of their own */
+h2.rv,.eyeb.rv,.sub.rv{transition-duration:.7s}
+@media(prefers-reduced-motion:reduce){.stag>*{opacity:1;transform:none;transition:none}}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}
+ *{animation:none!important}html{scroll-behavior:auto}}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:90;overflow:visible;background:rgba(7,7,9,.78);
+ backdrop-filter:blur(20px) saturate(140%);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.brand{display:flex;align-items:center;gap:11px}
+/* The mark gets a lit ring and a slow sheen so the header reads as branded
+   rather than a default bar with a logo dropped into it. */
+.mark{position:relative;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+ background:linear-gradient(140deg,rgba(86,204,242,.32),rgba(139,92,246,.24));
+ box-shadow:0 0 0 1px rgba(255,255,255,.1),0 10px 26px rgba(86,204,242,.18);
+ overflow:hidden;flex-shrink:0}
+.mark::after{content:"";position:absolute;top:-60%;left:-120%;width:60%;height:220%;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+ transform:rotate(18deg);animation:markSheen 5.5s ease-in-out infinite}
+@keyframes markSheen{0%,72%{left:-120%}88%,100%{left:130%}}
+.brand img{width:30px;height:30px;object-fit:contain;position:relative}
+.bt2{display:block}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(86,204,242,.45),rgba(139,92,246,.35),transparent);
+ opacity:0;transition:opacity .4s}
+header.stuck::after{opacity:1}
+header.stuck{background:rgba(7,7,9,.9);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.hnav{display:flex;gap:22px;margin-left:6px}
+.hnav a{font-size:13.5px;color:var(--g);font-weight:550;position:relative;padding:4px 0;
+ transition:color .25s}
+.hnav a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:1.5px;
+ background:linear-gradient(90deg,var(--pri),var(--pur));transition:right .35s var(--e)}
+.hnav a:hover{color:var(--w)}
+.hnav a:hover::after{right:0}
+.hlogin{font-size:13px;font-weight:650;color:var(--l);padding:9px 14px;border-radius:999px;
+ border:1px solid var(--line2);transition:.25s}
+.hlogin:hover{color:var(--w);border-color:rgba(86,204,242,.6);background:rgba(86,204,242,.08)}
+@media(max-width:860px){.hnav{display:none}}
+@media(max-width:560px){.hlogin{padding:8px 11px;font-size:12px}}
+.brand b{font-size:16.5px;font-weight:700;letter-spacing:-.3px;line-height:1.1;display:block}
+.brand s{text-decoration:none;font-size:8.5px;color:var(--g);letter-spacing:1.3px;text-transform:uppercase}
+.nav-r{display:flex;align-items:center;gap:9px}
+.lang{display:flex;border:1px solid var(--line2);border-radius:999px;overflow:hidden}
+.lang button{background:none;border:0;color:var(--g);font:inherit;font-size:11.5px;font-weight:700;
+ padding:7px 12px;cursor:pointer;transition:.2s}
+.lang button[aria-pressed="true"]{background:var(--w);color:#0a0a0f}
+.mini{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-size:12.5px;font-weight:700;
+ cursor:pointer;color:#04121a;background:var(--pri);white-space:nowrap;transition:.2s}
+.mini:hover{background:#7FE0FF}
+
+/* ---------- hero ---------- */
+.hero{padding:clamp(52px,8vw,116px) 0 clamp(26px,4vw,52px);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;top:-30%;left:-10%;width:70%;height:120%;
+ background:radial-gradient(closest-side,rgba(86,204,242,.13),transparent);pointer-events:none}
+.hero::after{content:"";position:absolute;top:-20%;right:-14%;width:60%;height:110%;
+ background:radial-gradient(closest-side,rgba(139,92,246,.13),transparent);pointer-events:none}
+.hero>*{position:relative}
+.kicker{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line2);
+ border-radius:999px;padding:7px 15px 7px 8px;font-size:12px;color:var(--l);margin-bottom:26px}
+.kicker i{font-style:normal;background:var(--grn);color:#04120a;font-size:9.5px;font-weight:800;
+ padding:3px 8px;border-radius:999px;letter-spacing:.3px}
+h1{font-size:clamp(35px,6.4vw,78px);line-height:.99;letter-spacing:-.045em;font-weight:800;max-width:15em}
+h1 em{font-style:normal;color:transparent;background:linear-gradient(100deg,var(--pri) 10%,var(--pur));
+ -webkit-background-clip:text;background-clip:text}
+.forline{margin-top:26px;font-size:clamp(15px,1.7vw,19px);color:var(--g)}
+.forline b{color:var(--w);font-weight:600;border-bottom:2px solid var(--pri);padding-bottom:2px}
+.lede{margin-top:22px;font-size:clamp(15px,1.55vw,18.5px);color:var(--l);max-width:34em;line-height:1.62}
+.cta{margin-top:34px;display:flex;flex-wrap:wrap;gap:12px}
+.b1{border:0;border-radius:12px;padding:17px 28px;font:inherit;font-size:15px;font-weight:700;
+ cursor:pointer;color:#04121a;background:var(--pri);transition:.25s var(--e)}
+.b1:hover{background:#7FE0FF;transform:translateY(-2px);box-shadow:0 16px 40px rgba(86,204,242,.3)}
+.b2{border:1px solid var(--line2);border-radius:12px;padding:16px 24px;font-size:14.5px;
+ font-weight:600;display:inline-flex;align-items:center;gap:9px;transition:.25s}
+.b2:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.03)}
+/* Play Store button: the demo app is the strongest proof we have, so it gets
+   the real store mark and two lines rather than a quiet text link. */
+.b2.store{padding:11px 22px 11px 15px;gap:13px;background:rgba(255,255,255,.05);
+ border-color:rgba(255,255,255,.22)}
+.b2.store:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.36);
+ transform:translateY(-2px)}
+.b2.store svg{width:27px;height:27px;flex-shrink:0;filter:drop-shadow(0 2px 7px rgba(0,0,0,.55))}
+.b2.store small{display:block;font-size:10.5px;color:var(--g);font-weight:600;letter-spacing:.02em}
+.b2.store strong{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.01em;margin-top:1px}
+.note{margin-top:16px;font-size:12.5px;color:var(--g)}
+
+/* ---------- story ---------- */
+.story{padding-bottom:clamp(30px,5vw,70px)}
+.sgrid{display:grid;grid-template-columns:1fr 372px;gap:clamp(28px,5vw,80px);align-items:start}
+.panel{min-height:80vh;display:flex;flex-direction:column;justify-content:center;padding:30px 0}
+.pnum{display:flex;align-items:center;gap:11px;font-size:11px;font-weight:700;
+ letter-spacing:.16em;color:var(--g);text-transform:uppercase}
+.pnum i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--pri)}
+.pnum::after{content:"";flex:1;height:1px;background:var(--line);max-width:70px}
+.panel h3{font-size:clamp(25px,3.5vw,42px);line-height:1.08;letter-spacing:-.035em;
+ margin-top:16px;font-weight:750;max-width:12em}
+.panel p{margin-top:15px;color:var(--g);font-size:clamp(14.5px,1.45vw,17px);max-width:30em}
+.panel ul{margin-top:22px;list-style:none;display:grid;gap:0;max-width:30em}
+.panel li{color:var(--l);font-size:14.5px;padding:11px 0 11px 20px;position:relative;
+ border-top:1px solid var(--line)}
+.panel li:last-child{border-bottom:1px solid var(--line)}
+.panel li::before{content:"";position:absolute;left:0;top:19px;width:6px;height:6px;border-radius:50%;
+ background:var(--pri)}
+
+.stage{position:sticky;top:92px;height:min(650px,80vh);display:flex;align-items:center;
+ justify-content:center;perspective:1700px}
+.phone{width:min(318px,86vw);height:min(636px,76vh);border-radius:40px;padding:10px;
+ background:linear-gradient(160deg,#2B2B36,#08080C 62%);border:1px solid rgba(255,255,255,.16);
+ box-shadow:0 60px 120px rgba(0,0,0,.8),0 0 0 1px rgba(86,204,242,.08),
+  inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(0,0,0,.6);
+ transform:rotateY(-12deg) rotateX(3deg);transition:transform 1.1s var(--e);position:relative}
+/* side buttons — small thing, but a flat slab reads as a placeholder */
+.phone::before{content:"";position:absolute;right:-2px;top:132px;width:2px;height:56px;
+ border-radius:2px;background:linear-gradient(180deg,#3A3A46,#1B1B22);z-index:5}
+.btn2,.btn3{position:absolute;left:-2px;width:2px;border-radius:2px;
+ background:linear-gradient(180deg,#3A3A46,#1B1B22);z-index:5}
+.btn2{top:112px;height:30px}.btn3{top:152px;height:30px}
+.phone::after{content:"";position:absolute;inset:0;border-radius:40px;pointer-events:none;
+ background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 30%,transparent 72%,rgba(86,204,242,.1))}
+.phone.tilt{transform:rotateY(-5deg) rotateX(1deg) scale(1.012)}
+.notch{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:58px;height:5px;
+ border-radius:9px;background:rgba(255,255,255,.2);z-index:6}
+.vp{position:relative;height:100%;border-radius:31px;overflow:hidden;background:var(--pap)}
+.sc{position:absolute;inset:0;padding:26px 12px 12px;color:var(--ink);display:flex;
+ flex-direction:column;gap:7px;opacity:0;pointer-events:none;
+ transition:opacity .45s var(--e),transform .55s var(--e)}
+.sc.on{opacity:1;transform:none!important}
+/* Each screen enters from its own direction, so consecutive swaps never repeat
+   the same motion. */
+.sc[data-i="0"]{transform:translateY(18px) scale(.985)}
+.sc[data-i="1"]{transform:translateX(24px)}
+.sc[data-i="2"]{transform:translateX(-24px)}
+.sc[data-i="3"]{transform:scale(.93)}
+.sc[data-i="4"]{transform:translateY(24px)}
+
+/* ---- per-screen detail animations, only once the screen is active ---- */
+@keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes feed{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes popin{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(14,158,87,.5)}50%{box-shadow:0 0 0 7px rgba(14,158,87,0)}}
+@keyframes dash{to{background-position:22px 0}}
+
+/* 02 stock rows slide in from the left, chips pop after */
+.sc[data-i="1"].on .k{animation:slideL .5s var(--e) both}
+.sc[data-i="1"].on .k:nth-of-type(2){animation-delay:.11s}
+.sc[data-i="1"].on .k:nth-of-type(3){animation-delay:.22s}
+.sc[data-i="1"].on .k:nth-of-type(4){animation-delay:.33s}
+.sc[data-i="1"].on .chip{animation:popin .3s var(--e) both}
+.sc[data-i="1"].on .chip:nth-child(2){animation-delay:.34s}
+.sc[data-i="1"].on .chip:nth-child(3){animation-delay:.42s}
+
+/* 04 ledger rows cascade */
+.sc[data-i="2"].on .kr{animation:rise .42s var(--e) both}
+.sc[data-i="2"].on .kr:nth-child(2){animation-delay:.09s}
+.sc[data-i="2"].on .kr:nth-child(3){animation-delay:.18s}
+.sc[data-i="2"].on .kr:nth-child(4){animation-delay:.27s}
+
+/* 05 devices pop in, then the sync line runs between them */
+.sc[data-i="3"].on .dv{animation:popin .45s var(--e) both}
+.sc[data-i="3"].on .dv:nth-child(2){animation-delay:.13s}
+.sc[data-i="3"].on .dv:nth-child(3){animation-delay:.26s}
+.sc[data-i="3"].on .sync{animation:rise .4s var(--e) .45s both}
+.sc[data-i="3"].on .sync b{animation:glow 1.9s ease-in-out .9s infinite}
+.syncline{height:2px;border-radius:2px;margin:1px 2px 0;
+ background:repeating-linear-gradient(90deg,#0E9E57 0 8px,transparent 8px 22px);
+ background-size:22px 2px;opacity:0}
+.sc[data-i="3"].on .syncline{opacity:1;animation:dash .8s linear .5s infinite}
+
+/* 06 account cards slide in one by one */
+.sc[data-i="4"].on .acc{animation:slideL .5s var(--e) both}
+.sc[data-i="4"].on .acc:nth-of-type(2){animation-delay:.12s}
+.sc[data-i="4"].on .acc:nth-of-type(3){animation-delay:.24s}
+.sbar{display:flex;justify-content:space-between;font-size:8px;color:#9a9aa4;padding:0 3px}
+.stt{font-size:17px;font-weight:800;letter-spacing:-.03em}
+.stt small{display:block;font-size:8.5px;font-weight:600;color:#9a9aa4;letter-spacing:.03em}
+.k{background:#fff;border:1px solid #EAE6DC;border-radius:10px;padding:9px 10px}
+.kr{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10.5px;
+ color:#43434F;padding:5px 0;border-bottom:1px solid #F3EFE6}
+.kr:last-child{border:0}
+.kr u{text-decoration:none;font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:10px}
+.up{color:#0E9E57}.dn{color:#C2392F}.mut{color:#9a9aa4}
+.chip{display:inline-block;font-size:8px;padding:2px 6px;border-radius:5px;margin:2px 3px 0 0;
+ border:1px solid #E0DACC;color:#5F5F6B;background:#fff;font-family:var(--mono)}
+.chip.a{border-color:#A5DBC0;color:#0E9E57}.chip.b{border-color:#F2CBA0;color:#B9721F}
+.epgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.ep{background:#fff;border:1px solid #EAE6DC;border-radius:8px;padding:4px;
+ opacity:0;transform:scale(.92);animation:pin .45s var(--e) forwards}
+.ep i{display:block;height:31px;border-radius:5px;margin-bottom:3px}
+.ep b{display:block;font-size:7.5px;line-height:1.25;color:#36363F;font-weight:700}
+.ep u{text-decoration:none;color:#0E9E57;font-weight:800;font-size:8px;font-family:var(--mono)}
+@keyframes pin{to{opacity:1;transform:none}}
+.cart{margin-top:auto;background:var(--ink);color:#fff;border-radius:10px;padding:9px 11px;
+ display:flex;justify-content:space-between;font-weight:700;font-size:10.5px}
+.tabs{display:flex;gap:4px;overflow:hidden}
+.tab{font-size:7.5px;padding:4px 8px;border-radius:999px;border:1px solid #E0DACC;color:#5F5F6B;background:#fff}
+.tab.on2{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+.srch{background:#fff;border:1px solid #EAE6DC;border-radius:8px;padding:7px 9px;font-size:8.5px;color:#A2A2AC}
+.acc{border-radius:10px;padding:9px 11px;color:#fff}
+.acc u{text-decoration:none;font-size:7.5px;opacity:.85;display:block;text-align:right}
+.acc b{font-size:16px;font-weight:800;display:block;letter-spacing:-.03em;font-family:var(--mono)}
+.acc i{font-style:normal;font-size:7.5px;opacity:.85}
+.pill2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pl{border-radius:9px;padding:8px 9px;color:#fff}
+.pl u{text-decoration:none;font-size:7px;opacity:.85;display:block;letter-spacing:.04em}
+.pl b{font-size:15px;font-weight:800;display:block;font-family:var(--mono)}
+.bar{display:flex;align-items:center;gap:6px;font-size:8px;color:#5F5F6B;margin-bottom:4px}
+.bar span{width:48px;text-align:right;flex-shrink:0}
+.bar i{height:7px;border-radius:4px;display:block;width:0;transition:width 1s var(--e)}
+.sc.on .bar i{width:var(--w2)}
+.dev{display:flex;gap:6px;align-items:stretch}
+.dv{flex:1;background:#fff;border:1px solid #EAE6DC;border-radius:9px;padding:8px;text-align:center;font-size:8px;color:#5F5F6B}
+.dv b{display:block;font-size:9px;color:#36363F;margin-bottom:3px}
+.dv s{text-decoration:none;display:block;font-size:14px;margin-bottom:2px}
+.sync{text-align:center;font-size:8.5px;color:#0E9E57;font-weight:700;padding:5px 0}
+.rcpt{background:#fff;border:1px dashed #D8D2C4;border-radius:8px;padding:10px;font-family:var(--mono);
+ font-size:8px;color:#43434F;line-height:1.7}
+.rcpt div{display:flex;justify-content:space-between}
+.rcpt hr{border:0;border-top:1px dashed #D8D2C4;margin:5px 0}
+.rail{position:absolute;left:-28px;top:50%;transform:translateY(-50%);display:grid;gap:8px}
+.rail b{display:block;width:3px;height:20px;border-radius:2px;background:rgba(255,255,255,.14);
+ transition:.45s var(--e)}
+.rail b.on{background:var(--pri);height:34px;box-shadow:0 0 14px rgba(86,204,242,.6)}
+
+/* ---------- sections ---------- */
+section{padding:clamp(46px,6vw,84px) 0}
+.eyeb{font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--g);text-transform:uppercase}
+/* Headings were sized for a hero, not a section. At 48px the title alone ate
+   the viewport and the content beneath never appeared with it. */
+h2{font-size:clamp(23px,2.9vw,34px);line-height:1.1;letter-spacing:-.035em;margin-top:9px;font-weight:750}
+.sub{margin-top:10px;color:var(--g);max-width:38em;font-size:clamp(14px,1.35vw,16px)}
+/* Heading block and its content share one row on wide screens, so you always
+   see what the section is about and what it contains at the same time. */
+.shead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+ gap:clamp(18px,4vw,54px);align-items:end}
+@media(max-width:900px){.shead{grid-template-columns:1fr;gap:4px}}
+
+/* capability bento — visual tiles instead of a numbered text list */
+/* Compact capability grid. Icon sits inline beside the label rather than
+   stacked above it, which removes a whole row of height per tile, and every
+   tile is the same size - no spans, so no holes. */
+.bento{margin-top:26px;display:grid;gap:9px;grid-template-columns:repeat(3,1fr)}
+.bt{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px;
+ display:grid;grid-template-columns:22px 1fr;gap:13px;align-items:start;
+ position:relative;overflow:hidden;transition:border-color .3s var(--e),background .3s}
+.bt::after{content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none;
+ background:linear-gradient(100deg,rgba(86,204,242,.09),transparent 55%)}
+.bt:hover{border-color:var(--line2);background:var(--card2)}
+.bt:hover::after{opacity:1}
+.bt svg{width:20px;height:20px;color:var(--pri);margin-top:2px}
+.bt b{font-size:14.5px;font-weight:650;letter-spacing:-.015em;line-height:1.3;display:block}
+.bt p{color:var(--g);font-size:12.5px;margin-top:3px;line-height:1.5}
+.bt.alt svg{color:var(--pur)}
+.bt.alt::after{background:linear-gradient(100deg,rgba(139,92,246,.1),transparent 55%)}
+
+/* ---------- moving trade strip ---------- */
+.strip{margin-top:34px;padding-top:26px;border-top:1px solid var(--line);
+ display:flex;align-items:center;gap:20px}
+.striplbl{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+ color:var(--g);white-space:nowrap;flex-shrink:0}
+.stripwin{position:relative;overflow:hidden;flex:1;
+ -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+ mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.striptrack{display:flex;gap:9px;width:max-content;animation:roll 34s linear infinite}
+.stripwin:hover .striptrack{animation-play-state:paused}
+@keyframes roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.trade{border:1px solid var(--line2);border-radius:999px;padding:8px 16px;font-size:13px;
+ color:var(--l);white-space:nowrap;transition:.25s var(--e)}
+.trade:hover{border-color:var(--pri);color:var(--w);background:rgba(86,204,242,.08)}
+@media(prefers-reduced-motion:reduce){.striptrack{animation:none}
+ .stripwin{overflow-x:auto}}
+@media(max-width:660px){.strip{flex-direction:column;align-items:flex-start;gap:12px}
+ .stripwin{width:100%}}
+
+/* ---------- bento: accent line draws in on reveal ---------- */
+.bt::before{content:"";position:absolute;top:0;left:0;height:2px;width:0;
+ background:linear-gradient(90deg,var(--pri),var(--pur));
+ transition:width .7s var(--e) .15s}
+.stag.in .bt::before{width:38%}
+.bt:hover::before{width:100%;transition-delay:0s}
+.bt:hover svg{transform:scale(1.12) rotate(-4deg)}
+.bt svg{transition:transform .35s var(--e)}
+
+/* ---------- two paths ---------- */
+.paths{display:grid;gap:16px;margin-top:30px;grid-template-columns:1fr 1fr}
+.path{border:1px solid var(--line2);border-radius:18px;padding:clamp(20px,2.4vw,28px);cursor:pointer;
+ background:var(--card);transition:.35s var(--e);position:relative;overflow:hidden;display:flex;
+ flex-direction:column}
+.path::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.path.a::before{background:radial-gradient(120% 90% at 0% 0%,rgba(86,204,242,.16),transparent 62%)}
+.path.b::before{background:radial-gradient(120% 90% at 0% 0%,rgba(139,92,246,.16),transparent 62%)}
+.path:hover,.path.sel{transform:translateY(-5px);border-color:var(--line2)}
+.path.a:hover,.path.a.sel{border-color:rgba(86,204,242,.55);box-shadow:0 26px 60px rgba(86,204,242,.14)}
+.path.b:hover,.path.b.sel{border-color:rgba(139,92,246,.55);box-shadow:0 26px 60px rgba(139,92,246,.14)}
+.path:hover::before,.path.sel::before{opacity:1}
+.path>*{position:relative}
+.ptag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+ padding:5px 11px;border-radius:999px;margin-bottom:20px;align-self:flex-start}
+.path.a .ptag{background:rgba(86,204,242,.14);color:var(--pri)}
+.path.b .ptag{background:rgba(139,92,246,.14);color:var(--pur)}
+.path h4{font-size:clamp(18px,2vw,23px);font-weight:750;letter-spacing:-.03em;line-height:1.12}
+.path p{color:var(--g);font-size:14px;margin-top:9px;flex:1}
+.pmeta{margin-top:14px;display:grid;gap:6px}
+.pmeta span{font-size:13px;color:var(--l);padding-left:19px;position:relative}
+.pmeta span::before{content:"→";position:absolute;left:0;color:var(--pri);font-size:12px}
+.path.b .pmeta span::before{color:var(--pur)}
+/* A slow sheen crosses each card, and the border lights along its top edge on
+   hover — enough motion that the choice reads as active, not a static box. */
+.path::after{content:"";position:absolute;top:0;left:0;height:2px;width:0;
+ background:linear-gradient(90deg,var(--pri),var(--pur));transition:width .55s var(--e)}
+.path.b::after{background:linear-gradient(90deg,var(--pur),var(--pri))}
+.path:hover::after,.path.sel::after{width:100%}
+.path .shine{position:absolute;top:-40%;left:-60%;width:40%;height:180%;pointer-events:none;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+ transform:rotate(16deg);animation:pathSheen 7s ease-in-out infinite}
+.path.b .shine{animation-delay:3.5s}
+@keyframes pathSheen{0%,78%{left:-60%}94%,100%{left:130%}}
+.pgo{margin-top:18px;display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:700;
+ padding:14px 24px;border-radius:12px;align-self:flex-start;transition:.25s}
+.path.a .pgo{background:var(--pri);color:#04121a}
+.path.b .pgo{background:var(--pur);color:#fff}
+.path:hover .pgo{gap:14px}
+
+.fbox{display:none;margin-top:26px;background:var(--card);border:1px solid var(--line2);
+ border-radius:22px;padding:clamp(24px,3.4vw,40px);grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.fbox.show{display:grid;animation:fadeup .55s var(--e)}
+@keyframes fadeup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.stp{display:grid;gap:20px}
+/* Direct children only. `.stp div` also matched the inner text wrapper, which
+   put the label into the 26px number column and wrapped it one word per line. */
+.stp>div{display:grid;grid-template-columns:26px 1fr;gap:13px;align-items:start}
+.stp>div>div{display:block}
+.stp em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--pri)}
+.stp b{font-size:15px;font-weight:650}
+.stp p{color:var(--g);font-size:13.5px;margin-top:3px}
+.fld{margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:650;color:var(--l);margin-bottom:7px}
+input,select{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--line2);border-radius:11px;
+ padding:14px;color:var(--w);font:inherit;font-size:15px;transition:border-color .2s}
+input:focus,select:focus{outline:0;border-color:var(--pri)}
+select option{background:var(--card)}
+.er{color:var(--red);font-size:11.5px;min-height:14px;display:block;margin-top:4px}
+.sbm{width:100%;border:0;border-radius:12px;padding:16px;font:inherit;font-size:15px;font-weight:700;
+ cursor:pointer;color:#04121a;background:var(--pri);transition:.2s}
+.sbm:hover{background:#7FE0FF}
+.sbm[disabled]{opacity:.45}
+.done{display:none;text-align:center;padding:26px 6px}
+form.sent .fs2{display:none}form.sent .done{display:block}
+/* ---------- engine warm-up bar (fixed, bottom) ---------- */
+.eng{position:fixed;left:0;right:0;bottom:0;z-index:95;background:rgba(7,7,9,.93);
+ backdrop-filter:blur(18px);border-top:1px solid var(--line);
+ transform:translateY(101%);transition:transform .5s var(--e)}
+.eng.show{transform:none}
+.eng.done{transform:translateY(101%)}
+.eng.gone{display:none!important}
+.engbar{height:3px;background:rgba(255,255,255,.07);position:relative;overflow:hidden}
+.engbar i{position:absolute;left:0;top:0;bottom:0;width:0;
+ background:linear-gradient(90deg,var(--pri),var(--pur));
+ transition:width .5s var(--e);box-shadow:0 0 14px rgba(86,204,242,.6)}
+.engbar i::after{content:"";position:absolute;inset:0;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+ animation:sheen 1.5s linear infinite}
+@keyframes sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.eng.ready .engbar i::after{display:none}
+.engrow{max-width:1200px;margin:0 auto;padding:9px clamp(20px,5vw,48px);
+ display:flex;align-items:center;gap:12px}
+.engrow img{width:21px;height:21px;object-fit:contain;opacity:.85;flex-shrink:0}
+.engtxt{font-size:12px;color:var(--g);flex:1;min-width:0;overflow:hidden;
+ text-overflow:ellipsis;white-space:nowrap}
+.engtxt b{color:var(--l);font-weight:650}
+.engpct{font-family:var(--mono);font-size:12px;color:var(--pri);font-variant-numeric:tabular-nums}
+.eng.ready .engpct{color:var(--grn)}
+.sbm.wait{opacity:.5;cursor:progress}
+.gate{display:none;font-size:11.5px;color:var(--org);margin-top:9px;text-align:center}
+.gate.show{display:block}
+footer{border-top:1px solid var(--line);padding:34px 0;color:var(--g);font-size:13px}
+/* Room for the warm-up bar only while it is on screen. Reserving it in the
+   footer left permanent dead space that looked like a second footer. */
+body.warming{padding-bottom:52px}
+
+/* ---------- mobile ---------- */
+@media(max-width:1000px){
+ /* MOBILE IS NOT A NARROW DESKTOP.
+    The visitor is already holding a phone, so drawing a phone bezel around the
+    screens is redundant and eats roughly half the usable width. On mobile the
+    app screens become full-width cards sitting inline in the story, revealed
+    as you scroll - no sticky frame, no swapping, no fake device. */
+ .sgrid{grid-template-columns:1fr;gap:0}
+ .stage{display:none}
+ .panel{min-height:auto;padding:26px 0 10px}
+ .panel h3{font-size:clamp(23px,6.4vw,30px);max-width:none;margin-top:12px}
+ .panel ul{margin-top:16px}
+
+ /* Opacity and transform restated here at .panel .sc / .panel .sc.on so they
+    outrank the base .sc rules regardless of source order - the card was
+    measuring opacity:0 even with .on applied. */
+ .panel .sc{position:relative;inset:auto;height:auto;pointer-events:auto;
+  background:var(--pap);border:1px solid rgba(255,255,255,.09);border-radius:16px;
+  padding:16px;margin-top:22px;gap:8px;opacity:1;transform:none;transition:none;
+  box-shadow:0 20px 44px rgba(0,0,0,.55)}
+ /* Cards are VISIBLE by default and the entrance is a keyframe animation, not
+    a transition off opacity:0. A transition that never completes - which is
+    exactly what kept happening - would otherwise hide the content entirely. */
+ .panel .sc.enter{animation:cardIn .6s var(--e)}
+ @keyframes cardIn{from{transform:translateY(24px)}to{transform:none}}
+ .panel .sc .sbar{display:none}
+ .panel .sc .stt{font-size:16px}
+ .panel .sc .kr{font-size:11.5px}
+ .panel .sc .kr u{font-size:11px}
+ .panel .sc .acc b{font-size:18px}
+ .panel .sc .ep i{height:42px}
+ .panel .sc .ep b{font-size:9px}
+ .panel .sc .ep u{font-size:9.5px}
+ .panel .sc .chip{font-size:9px}
+ .panel .sc .cart{font-size:12px;padding:11px 13px}
+ .panel .sc .dv{font-size:9.5px}
+ .panel .sc .dv b{font-size:10.5px}
+ .panel .sc .bar{font-size:9.5px}
+ .panel .sc .bar span{width:56px}
+ .panel .sc .k{padding:10px 12px}
+
+ .bento{grid-template-columns:repeat(2,1fr);gap:9px}
+}
+@media(max-width:660px){
+ /* Visual-first on a phone: the screen carries the story, so the supporting
+    paragraph goes and only the concrete points stay. */
+ .panel p{display:none}
+ .panel li{font-size:13.5px;padding:9px 0 9px 18px}
+ .panel li::before{top:17px;width:5px;height:5px}
+ .pnum{font-size:10px}
+ .bento{grid-template-columns:1fr;gap:10px}
+ /* .bt.wide is two classes, so it outranks a plain .bt reset. Left unchecked,
+    span 2 in a one-column grid creates an implicit second column and crushes
+    every tile into half width. */
+ .bt,.bt.big,.bt.wide{grid-column:span 1;grid-row:auto;padding:18px}
+ .bt svg,.bt.big svg{width:23px;height:23px;margin-bottom:11px}
+ .bt b,.bt.big b{font-size:15.5px}
+ .bt p,.bt.big p{font-size:13px}
+
+}
+@media(max-width:660px){
+ .brand s{display:none}
+ .cta{flex-direction:column;align-items:stretch}
+ .b1,.b2{justify-content:center;text-align:center}
+
+ .paths,.fbox.show{grid-template-columns:1fr}
+
+}
+</style>
+<noscript><style>.rv{opacity:1;transform:none}.sc{opacity:1;position:relative}</style></noscript>
+</head>
+<body>
+
+<header id="hd"><div class="wrap nav">
+ <a class="brand" href="./">
+  <span class="mark"><img src="assets/assets/logo_mini.png" alt="ShopMS"></span>
+  <span class="bt2"><b>ShopMS</b><s data-t="brandTag">Shop Management System</s></span>
+ </a>
+ <nav class="hnav">
+  <a href="#features" data-t="hn1">Features</a>
+  <a href="#start" data-t="hn2">Partner</a>
+ </nav>
+ <div class="nav-r">
+  <div class="lang"><button data-l="en" aria-pressed="true">EN</button><button data-l="bn" aria-pressed="false">বাংলা</button></div>
+  <a class="hlogin" href="/login" data-t="navLogin">Log in</a>
+  <button class="mini" data-go="#start" data-t="navCta">Free trial</button>
+ </div>
+</div></header>
+
+<section class="hero"><div class="wrap">
+ <span class="kicker"><i data-t="kick1">3 MONTHS FREE</i><span data-t="kick2">Works fully offline · Multi-device</span></span>
+ <h1 data-t="h1">The whole shop, <em>on one system</em></h1>
+ <p class="forline"><span data-t="forFor">Built for</span> <b id="rot">grocery shops</b></p>
+ <p class="lede" data-t="lede">Billing and receipt printing, stock down to colour and size, customer dues, suppliers, staff payroll, expenses and accounts — running on your phone, your computer and your counter machine at the same time, with or without internet.</p>
+ <div class="cta">
+  <button class="b1" data-go="#start" data-t="cta1">Request your free trial</button>
+  <a class="b2 store" href="https://play.google.com/store/apps/details?id=com.mrroy.dev.sms" rel="noopener">
+   <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M3.4 2.2v27.6c0 .8.4 1.4 1 1.7L19 16 4.4.5c-.6.3-1 .9-1 1.7z" fill="#00D3FF"/>
+    <path d="M23.9 11.5 19 16l4.9 4.5 5.6-3.1c1.1-.6 1.1-2.2 0-2.8l-5.6-3.1z" fill="#FFCE00"/>
+    <path d="M4.4 31.5c.5.3 1.2.3 1.8-.1L23.9 20.5 19 16 4.4 31.5z" fill="#FF3B44"/>
+    <path d="M4.4.5 19 16l4.9-4.5L6.2.6C5.6.2 4.9.2 4.4.5z" fill="#00F076"/>
+   </svg>
+   <span><small data-t="cta2a">Try the live demo now</small><strong data-t="cta2b">Get it on Play Store</strong></span>
+  </a>
+ </div>
+ <p class="note" data-t="note">No payments. Every shop is verified before access — we reply within 12 hours.</p>
+</div></section>
+
+<div class="story"><div class="wrap sgrid">
+ <div class="stage">
+  <div class="rail" aria-hidden="true"><b class="on"></b><b></b><b></b><b></b><b></b></div>
+  <div class="phone" id="ph" aria-hidden="true"><div class="notch"></div><span class="btn2"></span><span class="btn3"></span><div class="vp">
+
+   <div class="sc on" data-i="0">
+    <div class="sbar"><span>7:54</span><span data-t="scEpos">EPOS</span></div>
+    <div class="stt" data-t="scEpos2">Billing<small data-t="scWalk">Walking customer</small></div>
+    <div class="srch" data-t="scSearch">Search product, barcode or batch…</div>
+    <div class="tabs"><span class="tab on2" data-t="scAll">ALL</span><span class="tab" data-t="scT1">Popular</span><span class="tab" data-t="scT2">New</span></div>
+    <div class="epgrid">
+     <div class="ep" style="animation-delay:.14s"><i style="background:linear-gradient(135deg,#8D6E63,#5D4037)"></i><b data-t="p1">Rice 5kg</b><u>620</u></div>
+     <div class="ep" style="animation-delay:.22s"><i style="background:linear-gradient(135deg,#26A69A,#00796B)"></i><b data-t="p2">Paracetamol</b><u>32</u></div>
+     <div class="ep" style="animation-delay:.3s"><i style="background:linear-gradient(135deg,#42A5F5,#1565C0)"></i><b data-t="p3">USB-C Cable</b><u>350</u></div>
+     <div class="ep" style="animation-delay:.38s"><i style="background:linear-gradient(135deg,#EF5350,#C62828)"></i><b data-t="p4">Wall Paint 1L</b><u>780</u></div>
+     <div class="ep" style="animation-delay:.46s"><i style="background:linear-gradient(135deg,#5C6BC0,#3949AB)"></i><b data-t="p5">Polo Shirt</b><u>1,250</u></div>
+     <div class="ep" style="animation-delay:.54s"><i style="background:linear-gradient(135deg,#FFA726,#EF6C00)"></i><b data-t="p6">Cooking Oil</b><u>185</u></div>
+    </div>
+    <div class="cart"><span data-t="scItems">3 items · hold bill</span><span>5,300</span></div>
+   </div>
+
+   <div class="sc" data-i="1">
+    <div class="sbar"><span>7:50</span><span data-t="scStock0">Stock</span></div>
+    <div class="stt" data-t="scStock">Available stock<small data-t="scStockSub">196 items in hand</small></div>
+    <div class="k"><div class="kr"><span><b data-t="s1n">Wall Paint</b><br>
+     <span class="chip a">WHITE(1L) 6</span><span class="chip">BLUE(1L) 6</span><span class="chip b">GREY(5L) 2</span></span><u>38</u></div></div>
+    <div class="k"><div class="kr"><span><b data-t="s2n">Smartphone A15</b><br>
+     <span class="chip">128GB 3</span><span class="chip">256GB 5</span></span><u>20</u></div></div>
+    <div class="k"><div class="kr"><span><b data-t="s3n">Polo Shirt</b><br>
+     <span class="chip">RED(L) 5</span><span class="chip">NAVY(M) 4</span></span><u>22</u></div></div>
+    <div class="k" style="margin-top:auto">
+     <div class="kr"><span data-t="s4n">Purchase value</span><u>1,30,900</u></div>
+     <div class="kr"><span data-t="s5n">Sale value</span><u class="up">1,89,400</u></div>
+    </div>
+   </div>
+
+   <div class="sc" data-i="2">
+    <div class="sbar"><span>7:50</span><span data-t="scLed0">Ledger</span></div>
+    <div class="stt" data-t="scLed">Customer ledger<small data-t="scLedSub">Running balance</small></div>
+    <div class="k">
+     <div class="kr"><span data-t="scDeb">Debit · INV-EkD</span><u>5,800</u></div>
+     <div class="kr"><span data-t="scCre">Credit</span><u class="up">3,800</u></div>
+     <div class="kr"><span data-t="scDeb2">Debit · INV-hEE</span><u>1,838</u></div>
+     <div class="kr"><span data-t="scCre2">Credit</span><u class="up">38</u></div>
+    </div>
+    <div class="k" style="margin-top:auto;background:var(--ink);border-color:var(--ink)">
+     <div class="kr" style="color:#D2D2DA;border-color:rgba(255,255,255,.1)"><span data-t="scTdeb">Total debit</span><u>30,503</u></div>
+     <div class="kr" style="color:#D2D2DA;border-color:rgba(255,255,255,.1)"><span data-t="scTcre">Total credit</span><u>19,638</u></div>
+     <div class="kr" style="color:#fff"><span data-t="scBal">Balance due</span><u style="color:#FF9F43">10,865</u></div>
+    </div>
+   </div>
+
+   <div class="sc" data-i="3">
+    <div class="sbar"><span>7:44</span><span data-t="scSync0">Sync</span></div>
+    <div class="stt" data-t="scSync">Your devices<small data-t="scSyncSub">Talking to each other, no internet</small></div>
+    <div class="dev">
+     <div class="dv"><s>▭</s><b data-t="dv1">Counter PC</b><span data-t="dv1s">Billing</span></div>
+     <div class="dv"><s>▯</s><b data-t="dv2">Phone</b><span data-t="dv2s">Stock check</span></div>
+     <div class="dv"><s>▤</s><b data-t="dv3">POS</b><span data-t="dv3s">Second till</span></div>
+    </div>
+    <div class="syncline"></div>
+    <div class="sync"><b style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#0E9E57;margin-right:5px"></b><span data-t="scSynced">All in sync · 2 seconds ago</span></div>
+    <div class="k">
+     <div class="kr"><span data-t="sy1">Sale on counter PC</span><u class="up">✓</u></div>
+     <div class="kr"><span data-t="sy2">Stock updated on phone</span><u class="up">✓</u></div>
+     <div class="kr"><span data-t="sy3">Internet</span><u class="dn" data-t="sy3v">Offline</u></div>
+    </div>
+    <div class="k" style="margin-top:auto"><div class="kr"><span data-t="sy4">Cloud backup when online</span><u class="mut" data-t="sy4v">Queued</u></div></div>
+   </div>
+
+   <div class="sc" data-i="4">
+    <div class="sbar"><span>7:48</span><span data-t="scRep0">Report</span></div>
+    <div class="stt" data-t="scRep">Today at a glance<small data-t="scRepSub">Closing summary</small></div>
+    <div class="pill2">
+     <div class="pl" style="background:#1F2430"><u data-t="scRec">RECEIVABLES</u><b>05</b></div>
+     <div class="pl" style="background:#B93A32"><u data-t="scPay">PAYABLES</u><b>04</b></div>
+    </div>
+    <div class="acc" style="background:var(--a1)"><u data-t="scBank">Bank account</u><b>2,65,815</b><i data-t="scBank2">Main account</i></div>
+    <div class="acc" style="background:var(--a2)"><u data-t="scCash">Cash counter</u><b>1,94,550</b><i data-t="scCash2">Drawer</i></div>
+    <div class="acc" style="background:var(--a3)"><u data-t="scWallet">Mobile wallet</u><b>51,100</b><i data-t="scWallet2">Digital payments</i></div>
+    <div class="k" style="margin-top:auto">
+     <div style="font-size:9px;font-weight:800;margin-bottom:6px" data-t="scBest">Best sellers this month</div>
+     <div class="bar"><span data-t="bs1">Rice</span><i style="--w2:86%;background:#EF5350"></i></div>
+     <div class="bar"><span data-t="bs2">Paint</span><i style="--w2:72%;background:#FF9F43"></i></div>
+     <div class="bar"><span data-t="bs3">Cable</span><i style="--w2:54%;background:#56CCF2"></i></div>
+     <div class="bar"><span data-t="bs4">Shirt</span><i style="--w2:41%;background:#8B5CF6"></i></div>
+    </div>
+   </div>
+
+  </div></div>
+ </div>
+
+ <div class="panels">
+  <div class="panel" data-s="0">
+   <span class="pnum"><i>01</i><span data-t="n1">At the counter</span></span>
+   <h3 data-t="t1">Bill a customer in seconds</h3>
+   <p data-t="d1">Tap the product or scan its barcode. Take cash, card or digital payment, split it, or put the rest on account. Hold a bill when someone steps away and pick it up later.</p>
+   <ul><li data-t="l1a">Barcode, batch and serial search</li><li data-t="l1b">Hold and resume bills, multiple tills</li><li data-t="l1c">Discounts, VAT and change handled</li></ul>
+  </div>
+
+  <div class="panel" data-s="1">
+   <span class="pnum"><i>02</i><span data-t="n3">Behind the shelf</span></span>
+   <h3 data-t="t3">Stock counts itself, down to colour and size</h3>
+   <p data-t="d3">Most systems tell you "38 shirts". That is useless when a customer asks for red in large. ShopMS counts every variant separately — through purchases, sales, returns and transfers.</p>
+   <ul><li data-t="l3a">Colour, size and custom variants</li><li data-t="l3b">Batch and serial tracking</li><li data-t="l3c">Low stock flagged before it runs out</li></ul>
+  </div>
+
+  <div class="panel" data-s="2">
+   <span class="pnum"><i>03</i><span data-t="n4">Money owed</span></span>
+   <h3 data-t="t4">Every due against a name and an invoice</h3>
+   <p data-t="d4">Part payment today, the rest next week — it lands in that customer's ledger with a running balance. Same for what you owe suppliers. Nobody has to remember anything.</p>
+   <ul><li data-t="l4a">Debit and credit per invoice</li><li data-t="l4b">Customer and supplier ledgers</li><li data-t="l4c">Export any ledger to PDF or CSV</li></ul>
+  </div>
+
+  <div class="panel" data-s="3">
+   <span class="pnum"><i>04</i><span data-t="n5">No internet, no problem</span></span>
+   <h3 data-t="t5">Fully offline, and your devices still talk to each other</h3>
+   <p data-t="d5">This is the part most shop software gets wrong. ShopMS does not just survive offline — your counter machine, your phone and a second till keep each other updated with no internet at all. When the connection returns, everything syncs to the cloud.</p>
+   <ul><li data-t="l5a">Sell, receive stock and print with no connection</li><li data-t="l5b">Devices sync directly to each other</li><li data-t="l5c">Cloud backup queues until you are online</li></ul>
+  </div>
+
+  <div class="panel" data-s="4">
+   <span class="pnum"><i>05</i><span data-t="n6">Closing time</span></span>
+   <h3 data-t="t6">The day adds itself up</h3>
+   <p data-t="d6">Sales, purchases, expenses, staff payroll, what is in the bank and what is in the drawer — totalled before you lock the shutter. And the month's best sellers, so you know what to reorder.</p>
+   <ul><li data-t="l6a">Daily and monthly reports</li><li data-t="l6b">Payroll, expenses and profit</li><li data-t="l6c">Best sellers and slow movers</li></ul>
+  </div>
+ </div>
+</div></div>
+
+<section style="background:var(--bg2)"><div class="wrap">
+ <div class="shead rv">
+  <div><p class="eyeb" data-t="fEye">Everything included</p>
+   <h2 data-t="fTitle">It is not a billing app. It runs the business.</h2></div>
+  <p class="sub" data-t="fSub">Turn on what you need and ignore the rest — a single till uses a fraction of this, a wholesale operation uses all of it.</p>
+ </div>
+<div class="bento rv stag">
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+   <div><b data-t="i1">Point of sale</b><p data-t="i1d">Photo catalogue, barcode scanning, held bills and multiple tills.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>
+   <div><b data-t="i2">Stock &amp; variants</b><p data-t="i2d">Colour, size, batch and serial — counted separately.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/><path d="M17 9l3 3-3 3"/></svg>
+   <div><b data-t="i3">Purchases &amp; returns</b><p data-t="i3d">Suppliers, invoices, VAT and returns against balance.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/><path d="M15 16h3"/></svg>
+   <div><b data-t="i4">Customer &amp; supplier ledgers</b><p data-t="i4d">Debit and credit on every invoice, with a running balance and full statement export.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M2.5 10h19"/><path d="M6 14.5h3"/></svg>
+   <div><b data-t="i5">Accounts &amp; payments</b><p data-t="i5d">Bank, cash counter and wallets, with receivables and payables.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+   <div><b data-t="i6">Staff &amp; payroll</b><p data-t="i6d">Salaries, advances and role-based access.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V3h10v5"/><rect x="3.5" y="8" width="17" height="7" rx="2"/><path d="M7 13h10v8H7z"/></svg>
+   <div><b data-t="i7">Printing</b><p data-t="i7d">Thermal receipts, A4 invoices, PDF and barcode labels.</p></div>
+  </div>
+
+  <div class="bt alt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="9" height="14" rx="1.8"/><rect x="14" y="8" width="7.5" height="11" rx="1.8"/><path d="M7 16h0M17.7 16h0"/></svg>
+   <div><b data-t="i8">Offline &amp; multi-device</b><p data-t="i8d">Full operation with no internet. Your devices keep each other updated, and the cloud catches up when you reconnect.</p></div>
+  </div>
+
+  <div class="bt">
+   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+   <div><b data-t="i9">Reports</b><p data-t="i9d">Daily and monthly summaries, best sellers, profit and export.</p></div>
+  </div>
+ </div>
+
+ <!-- "Any trade" folded in here as a moving strip. As its own section it was a
+      heading, a subhead and a static pile of chips that nobody read. -->
+ <div class="strip rv">
+  <span class="striplbl" data-t="anyEye">Works for these shops</span>
+  <div class="stripwin">
+   <div class="striptrack">
+    <span class="trade" data-t="tr1">Grocery</span><span class="trade" data-t="tr2">Pharmacy</span>
+    <span class="trade" data-t="tr3">Clothing &amp; fashion</span><span class="trade" data-t="tr4">Electronics</span>
+    <span class="trade" data-t="tr5">Hardware</span><span class="trade" data-t="tr6">Cosmetics</span>
+    <span class="trade" data-t="tr8">Stationery</span><span class="trade" data-t="tr9">Mobile &amp; accessories</span>
+    <span class="trade" data-t="tr10">Auto parts</span><span class="trade" data-t="tr11">Wholesale</span>
+    <span class="trade" data-t="tr12">Service business</span>
+    <span class="trade" aria-hidden="true">Grocery</span><span class="trade" aria-hidden="true">Pharmacy</span>
+    <span class="trade" aria-hidden="true">Clothing &amp; fashion</span><span class="trade" aria-hidden="true">Electronics</span>
+    <span class="trade" aria-hidden="true">Hardware</span><span class="trade" aria-hidden="true">Cosmetics</span>
+    <span class="trade" aria-hidden="true">Stationery</span><span class="trade" aria-hidden="true">Mobile &amp; accessories</span>
+    <span class="trade" aria-hidden="true">Auto parts</span><span class="trade" aria-hidden="true">Wholesale</span>
+    <span class="trade" aria-hidden="true">Service business</span>
+   </div>
+  </div>
+ </div>
+</div></section>
+
+<section id="start" style="background:var(--bg2)"><div class="wrap">
+ <div class="shead rv">
+  <div><p class="eyeb" data-t="pEye">Start here</p>
+   <h2 data-t="pTitle">Which one are you?</h2></div>
+  <p class="sub" data-t="pSub">Two different things — pick the one that describes you. Both take about half a minute.</p>
+ </div>
+
+ <div class="paths rv stag">
+  <div class="path a" data-form="own" tabindex="0" role="button"><span class="shine"></span>
+   <span class="ptag" data-t="tag1">For shop owners</span>
+   <h4 data-t="pa1">I run a shop and I want to use ShopMS</h4>
+   <p data-t="pa1d">Get the full system running in your own shop, free for three months. We set it up with you and train your staff.</p>
+   <div class="pmeta"><span data-t="pm1">Three months free, no payments</span><span data-t="pm2">Setup and training included</span><span data-t="pm3">Login sent by SMS within 12 hours</span></div>
+   <span class="pgo" data-t="pa1c">Request free trial →</span>
+  </div>
+
+  <div class="path b" data-form="ptr" tabindex="0" role="button"><span class="shine"></span>
+   <span class="ptag" data-t="tag2">For partners</span>
+   <h4 data-t="pa2">I know shop owners and want to earn from it</h4>
+   <p data-t="pa2d">You introduce shops to us. We handle the demo, setup and support. You earn a share of what they pay, every month they stay.</p>
+   <div class="pmeta"><span data-t="pm4">No investment, no risk</span><span data-t="pm5">Paid monthly, for as long as they stay</span><span data-t="pm6">We do the selling and support</span></div>
+   <span class="pgo" data-t="pa2c">Become a partner →</span>
+  </div>
+ </div>
+
+ <div class="fbox" id="box-own">
+  <div class="stp">
+   <div><em>01</em><div><b data-t="s1t">Send your details</b><p data-t="s1d">Three fields. Half a minute.</p></div></div>
+   <div><em>02</em><div><b data-t="s2t">We verify your shop</b><p data-t="s2d">A quick check so only real shops get access.</p></div></div>
+   <div><em>03</em><div><b data-t="s3t">Login arrives by SMS</b><p data-t="s3d">Then three months free — no payments, nothing to cancel.</p></div></div>
+  </div>
+  <form id="fown" novalidate><div class="fs2">
+   <div class="fld"><label data-t="lName">Your name</label><input name="name" autocomplete="name"><i class="er"></i></div>
+   <div class="fld"><label data-t="lBiz">What kind of business</label>
+    <select name="business"><option value="" data-t="oSel">Choose one</option>
+     <option data-t="o1">Grocery</option><option data-t="o2">Pharmacy</option><option data-t="o3">Clothing / Fashion</option>
+     <option data-t="o4">Electronics</option><option data-t="o5">Hardware</option><option data-t="o6">Cosmetics</option>
+     <option data-t="o8">Mobile &amp; accessories</option>
+     <option data-t="o9">Auto parts</option><option data-t="o10">Wholesale</option>
+     <option data-t="o11">Service business</option><option data-t="o12">Other</option></select><i class="er"></i></div>
+   <div class="fld"><label data-t="lPhone">Mobile number</label><input name="phone" inputmode="tel" autocomplete="tel"><i class="er"></i></div>
+   <button type="submit" class="sbm" data-t="lSubmit">Request free trial</button>
+   <span class="gate" data-t="gateMsg">Finishing setup — one moment…</span>
+   <p style="color:var(--g);font-size:11.5px;margin-top:11px;text-align:center" data-t="lNote">We only use your number to send your login. No spam.</p>
+  </div><div class="done"><div style="font-size:30px">✓</div>
+   <b style="display:block;margin-top:8px;font-size:18px" data-t="okT">Request received</b>
+   <p style="color:var(--g);font-size:14px;margin-top:6px" data-t="okD">We'll verify your shop and send your login by SMS within 12 hours.</p></div></form>
+ </div>
+
+ <div class="fbox" id="box-ptr">
+  <div class="stp">
+   <div><em>01</em><div><b data-t="q1t">Tell us about you</b><p data-t="q1d">Name, number, and roughly how many shops you know.</p></div></div>
+   <div><em>02</em><div><b data-t="q2t">We talk it through</b><p data-t="q2d">We call within 24 hours and explain exactly how the commission works.</p></div></div>
+   <div><em>03</em><div><b data-t="q3t">You introduce shops</b><p data-t="q3d">We demo, set up and support them. You earn every month they stay.</p></div></div>
+  </div>
+  <form id="fptr" novalidate><div class="fs2">
+   <div class="fld"><label data-t="lName">Your name</label><input name="name" autocomplete="name"><i class="er"></i></div>
+   <div class="fld"><label data-t="lShops">Roughly how many shops do you know?</label><input name="shops" type="number" min="1" value="1"><i class="er"></i></div>
+   <div class="fld"><label data-t="lPhone">Mobile number</label><input name="phone" inputmode="tel" autocomplete="tel"><i class="er"></i></div>
+   <button type="submit" class="sbm" style="background:var(--pur);color:#fff" data-t="lSubmit2">Apply to partner</button>
+   <span class="gate" data-t="gateMsg2">Finishing setup — one moment…</span>
+   <p style="color:var(--g);font-size:11.5px;margin-top:11px;text-align:center" data-t="lNote2">No investment needed. We'll call and explain everything.</p>
+  </div><div class="done"><div style="font-size:30px">✓</div>
+   <b style="display:block;margin-top:8px;font-size:18px" data-t="okT2">Application received</b>
+   <p style="color:var(--g);font-size:14px;margin-top:6px" data-t="okD2">We'll call within 24 hours to walk you through it.</p></div></form>
+ </div>
+</div></section>
+
+<div class="eng" id="eng" aria-live="polite">
+ <div class="engbar"><i id="engbar"></i></div>
+ <div class="engrow">
+  <img src="assets/assets/logo_mini.png" alt="">
+  <span class="engtxt" id="engtxt"><b data-t="engPrep">Preparing your app</b> <span data-t="engSub">— so it opens instantly when you log in</span></span>
+  <span class="engpct" id="engpct">0%</span>
+ </div>
+</div>
+
+<footer><div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center">
+ <span style="display:flex;align-items:center;gap:10px"><img src="assets/assets/logo_mini.png" alt="" style="width:26px;height:26px;object-fit:contain;opacity:.75">© <span id="yr"></span> ShopMS</span>
+ <span data-t="fTag">Shop management, wherever you trade</span>
+</div></footer>
+
+<script>
+(function(){"use strict";
+var BN={
+navCta:"ফ্রি ট্রায়াল",navLogin:"লগ ইন",hn1:"সুবিধা",hn2:"পার্টনার",brandTag:"শপ ম্যানেজমেন্ট সিস্টেম",
+kick1:"৩ মাস ফ্রি",kick2:"সম্পূর্ণ অফলাইনে চলে · একাধিক ডিভাইস",
+h1:'পুরো দোকান, <em>একটি সিস্টেমে</em>',forFor:"উপযোগী",
+lede:"বিলিং ও রশিদ প্রিন্ট, রঙ-সাইজ ধরে মজুদ, খদ্দেরের বাকি, সাপ্লায়ার, কর্মচারীর বেতন, খরচ আর হিসাব — আপনার ফোন, কম্পিউটার আর কাউন্টার মেশিনে একসাথে, ইন্টারনেট থাকুক বা না থাকুক।",
+cta1:"ফ্রি ট্রায়ালের আবেদন",cta2a:"এখনই লাইভ ডেমো দেখুন",cta2b:"প্লে স্টোর থেকে নিন",
+note:"কোনো পেমেন্ট লাগবে না। প্রতিটি দোকান যাচাই করে ১২ ঘণ্টার মধ্যে জানাই।",
+n1:"কাউন্টারে",t1:"সেকেন্ডেই বিল",
+d1:"পণ্যে চাপ দিন বা বারকোড স্ক্যান করুন। ক্যাশ, কার্ড বা ডিজিটাল পেমেন্ট, ভাগ করেও নিতে পারেন, বাকিটা খাতায় যাবে। খদ্দের সরে গেলে বিল হোল্ড করে রাখুন।",
+l1a:"বারকোড, ব্যাচ ও সিরিয়ালে খোঁজা",l1b:"বিল হোল্ড ও একাধিক কাউন্টার",l1c:"ডিসকাউন্ট, ভ্যাট ও ফেরত টাকার হিসাব",
+t2:"রশিদ তখনই প্রিন্ট",
+
+l2b:"দোকানের তথ্যসহ A4 ইনভয়েস",l2c:"বারকোড ও দামের লেবেল প্রিন্ট",
+n3:"শেলফের পেছনে",t3:"মজুদ নিজেই গোনে, রঙ ও সাইজ ধরে",
+d3:"বেশিরভাগ সিস্টেম বলে “৩৮টি শার্ট”। কেউ লাল রঙে লার্জ চাইলে ওই হিসাব কাজে আসে না। শপএমএস প্রতিটি ভ্যারিয়েন্ট আলাদা গোনে — ক্রয়, বিক্রি, রিটার্ন ও ট্রান্সফারে।",
+l3a:"রঙ, সাইজ ও নিজের ভ্যারিয়েন্ট",l3b:"ব্যাচ ও সিরিয়াল ট্র্যাকিং",l3c:"শেষ হওয়ার আগেই সতর্কতা",
+n4:"পাওনা টাকা",t4:"প্রতিটি বাকি নাম আর ইনভয়েস ধরে",
+d4:"আজ কিছু দিল, বাকিটা পরের সপ্তাহে — সব ওই খদ্দেরের খাতায় চলমান ব্যালেন্সসহ থাকে। সাপ্লায়ারকে আপনি যা দেবেন সেটাও একইভাবে। কাউকে মুখস্থ রাখতে হয় না।",
+l4a:"ইনভয়েস ধরে ডেবিট-ক্রেডিট",l4b:"খদ্দের ও সাপ্লায়ারের খাতা",l4c:"যেকোনো খাতা PDF বা CSV",
+n5:"নেট নেই? সমস্যা নেই",t5:"সম্পূর্ণ অফলাইন, তবু ডিভাইসগুলো কথা বলে",
+d5:"এখানেই বেশিরভাগ সফটওয়্যার হেরে যায়। শপএমএস শুধু অফলাইনে টিকে থাকে না — আপনার কাউন্টার মেশিন, ফোন আর দ্বিতীয় কাউন্টার ইন্টারনেট ছাড়াই একে অন্যকে হালনাগাদ রাখে। নেট এলে সব ক্লাউডে চলে যায়।",
+l5a:"নেট ছাড়াই বিক্রি, মাল তোলা ও প্রিন্ট",l5b:"ডিভাইস সরাসরি একে অন্যের সাথে সিঙ্ক",l5c:"নেট এলে ক্লাউড ব্যাকআপ",
+n6:"দোকান বন্ধের সময়",t6:"দিনের হিসাব নিজেই মেলে",
+d6:"বিক্রি, ক্রয়, খরচ, কর্মচারীর বেতন, ব্যাংকে কত আর ড্রয়ারে কত — শাটার নামানোর আগেই যোগ হয়ে থাকে। সাথে মাসের সেরা বিক্রি, যাতে বোঝেন কী আনতে হবে।",
+l6a:"দৈনিক ও মাসিক রিপোর্ট",l6b:"বেতন, খরচ ও লাভ",l6c:"সেরা ও ধীরগতির পণ্য",
+scEpos:"ইপস",scEpos2:"বিলিং",scWalk:"ওয়াকিং কাস্টমার",scSearch:"পণ্য, বারকোড বা ব্যাচ খুঁজুন…",
+scAll:"সব",scT1:"জনপ্রিয়",scT2:"নতুন",
+p1:"চাল ৫ কেজি",p2:"প্যারাসিটামল",p3:"ইউএসবি ক্যাবল",p4:"ওয়াল পেইন্ট ১ লি",p5:"পোলো শার্ট",p6:"সয়াবিন তেল",
+scItems:"৩টি পণ্য · বিল হোল্ড",
+scPrint2:"প্রিন্ট ও শেয়ার",scPrint3:"থার্মাল · A4 · PDF",
+rc2:"সাবটোটাল",rc3:"ভ্যাট ৫%",rc4:"পরিশোধ",rc5:"ধন্যবাদ — আবার আসবেন",
+rc7:"যুক্ত",rc8:"বারকোড লেবেল",rc9:"প্রস্তুত",
+scStock0:"মজুদ",scStock:"বর্তমান মজুদ",scStockSub:"১৯৬টি পণ্য হাতে",
+s1n:"ওয়াল পেইন্ট",s2n:"স্মার্টফোন A15",s3n:"পোলো শার্ট",s4n:"ক্রয়মূল্য",s5n:"বিক্রয়মূল্য",
+scLed0:"খাতা",scLed:"খদ্দেরের খাতা",scLedSub:"চলমান ব্যালেন্স",
+scDeb:"ডেবিট · INV-EkD",scCre:"ক্রেডিট",scDeb2:"ডেবিট · INV-hEE",scCre2:"ক্রেডিট",
+scTdeb:"মোট ডেবিট",scTcre:"মোট ক্রেডিট",scBal:"বাকি ব্যালেন্স",
+scSync0:"সিঙ্ক",scSync:"আপনার ডিভাইস",scSyncSub:"নেট ছাড়াই একে অন্যের সাথে",
+dv1:"কাউন্টার পিসি",dv1s:"বিলিং",dv2:"ফোন",dv2s:"মজুদ দেখা",dv3:"পিওএস",dv3s:"দ্বিতীয় কাউন্টার",
+scSynced:"● সব সিঙ্ক · ২ সেকেন্ড আগে",
+sy1:"কাউন্টার পিসিতে বিক্রি",sy2:"ফোনে মজুদ হালনাগাদ",sy3:"ইন্টারনেট",sy3v:"অফলাইন",
+sy4:"নেট এলে ক্লাউড ব্যাকআপ",sy4v:"অপেক্ষায়",
+scRep0:"রিপোর্ট",scRep:"আজকের সারসংক্ষেপ",scRepSub:"দিন শেষের হিসাব",
+scRec:"পাওনা",scPay:"দেনা",scBank:"ব্যাংক অ্যাকাউন্ট",scBank2:"প্রধান হিসাব",
+scCash:"ক্যাশ কাউন্টার",scCash2:"ড্রয়ার",scWallet:"মোবাইল ওয়ালেট",scWallet2:"ডিজিটাল পেমেন্ট",
+scBest:"এ মাসের সেরা বিক্রি",bs1:"চাল",bs2:"পেইন্ট",bs3:"ক্যাবল",bs4:"শার্ট",
+fEye:"সব কিছু আছে",fTitle:"এটা শুধু বিলিং অ্যাপ নয়। পুরো ব্যবসা চালায়।",
+fSub:"যা দরকার চালু করুন, বাকিটা থাক — একটি কাউন্টারে সামান্য অংশ লাগে, পাইকারি ব্যবসায় পুরোটাই।",
+i1:"পয়েন্ট অব সেল",i1d:"ছবিসহ তালিকা, ক্যাটাগরি, বারকোড স্ক্যান, হোল্ড করা বিল, একাধিক কাউন্টার, নামসহ বা ওয়াকিং কাস্টমার।",
+i2:"মজুদ ও ভ্যারিয়েন্ট",i2d:"রঙ, সাইজ, ব্যাচ ও সিরিয়াল। ট্রান্সফার, সমন্বয়, সতর্কতা আর মজুদের মূল্যায়ন।",
+i3:"ক্রয় ও রিটার্ন",i3d:"সাপ্লায়ার, ইনভয়েস নম্বর, ভ্যাট, ডিসকাউন্ট, আগের ব্যালেন্স, আর ব্যালেন্সে সমন্বয় করা রিটার্ন।",
+i4:"খদ্দের ও সাপ্লায়ারের খাতা",i4d:"প্রতিটি ইনভয়েসের ডেবিট-ক্রেডিট, চলমান ব্যালেন্স আর পূর্ণ স্টেটমেন্ট।",
+i5:"অ্যাকাউন্ট ও পেমেন্ট",i5d:"একাধিক ব্যাংক, ক্যাশ কাউন্টার ও মোবাইল ওয়ালেট, পাওনা-দেনা সামনেই।",
+i6:"কর্মচারী ও বেতন",i6d:"কর্মচারী, বেতন, অগ্রিম ও পরিশোধ, সাথে কে কতটুকু দেখবে তার নিয়ন্ত্রণ।",
+i7:"প্রিন্টিং",i7d:"থার্মাল রশিদ, A4 ইনভয়েস, PDF শেয়ার, আর নিজের বারকোড ও দামের লেবেল।",
+i8:"অফলাইন ও মাল্টি-ডিভাইস",i8d:"নেট ছাড়াই পূর্ণ ব্যবহার, ডিভাইসগুলো একে অন্যের সাথে সিঙ্ক, নেট এলে ক্লাউড ব্যাকআপ।",
+i9:"রিপোর্ট",i9d:"দৈনিক ও মাসিক সারসংক্ষেপ, সেরা বিক্রি, লাভ, খরচ, আর যেকোনো কিছু CSV বা PDF।",
+anyEye:"যেসব দোকানে চলে",
+
+tr1:"মুদি",tr2:"ফার্মেসি",tr3:"কাপড় ও ফ্যাশন",tr4:"ইলেকট্রনিক্স",tr5:"হার্ডওয়্যার",tr6:"কসমেটিকস",
+tr8:"স্টেশনারি",tr9:"মোবাইল ও এক্সেসরিজ",tr10:"অটো পার্টস",
+tr11:"পাইকারি ও ডিস্ট্রিবিউশন",tr12:"সেবামূলক ব্যবসা",
+pEye:"এখান থেকে শুরু",pTitle:"আপনি কোনটি?",
+pSub:"দুটি আলাদা ব্যাপার — যেটি আপনার সাথে মেলে বেছে নিন। দুটোতেই আধা মিনিট।",
+tag1:"দোকান মালিকদের জন্য",pa1:"আমার দোকান আছে, শপএমএস ব্যবহার করতে চাই",
+pa1d:"নিজের দোকানে পুরো সিস্টেম চালু করুন, ৩ মাস সম্পূর্ণ ফ্রি। আমরা সেটআপ করে দিই আর কর্মচারীদের শিখিয়ে দিই।",
+pm1:"৩ মাস ফ্রি, কোনো পেমেন্ট নেই",pm2:"সেটআপ ও ট্রেনিং সহ",pm3:"১২ ঘণ্টার মধ্যে এসএমএসে লগইন",
+pa1c:"ফ্রি ট্রায়ালের আবেদন →",
+tag2:"পার্টনারদের জন্য",pa2:"আমি দোকানদার চিনি, এখান থেকে আয় করতে চাই",
+pa2d:"আপনি দোকান পরিচয় করিয়ে দেবেন। ডেমো, সেটআপ আর সাপোর্ট আমরা দেখব। তারা যত মাস থাকবে, আপনি তত মাস ভাগ পাবেন।",
+pm4:"বিনিয়োগ নেই, ঝুঁকি নেই",pm5:"তারা যতদিন থাকবে, প্রতি মাসে আয়",pm6:"বিক্রি ও সাপোর্ট আমাদের দায়িত্ব",
+pa2c:"পার্টনার হোন →",
+s1t:"তথ্য পাঠান",s1d:"তিনটি ঘর। আধা মিনিট।",
+s2t:"আমরা যাচাই করি",s2d:"শুধু আসল দোকান যেন অ্যাক্সেস পায়।",
+s3t:"এসএমএসে লগইন",s3d:"তারপর ৩ মাস ফ্রি — পেমেন্ট নেই, বাতিলের ঝামেলা নেই।",
+q1t:"নিজের কথা বলুন",q1d:"নাম, নম্বর, আর আনুমানিক কতটি দোকান চেনেন।",
+q2t:"আমরা কথা বলি",q2d:"২৪ ঘণ্টার মধ্যে ফোন করে কমিশন কীভাবে হয় বুঝিয়ে বলি।",
+q3t:"দোকান পরিচয় করান",q3d:"ডেমো, সেটআপ ও সাপোর্ট আমরা করি। তারা যতদিন থাকবে আপনি পাবেন।",
+lName:"আপনার নাম",lBiz:"কী ধরনের ব্যবসা",lPhone:"মোবাইল নম্বর",lShops:"আনুমানিক কতটি দোকান চেনেন?",
+oSel:"বেছে নিন",o1:"মুদি",o2:"ফার্মেসি",o3:"কাপড় / ফ্যাশন",o4:"ইলেকট্রনিক্স",o5:"হার্ডওয়্যার",
+o6:"কসমেটিকস",o8:"মোবাইল ও এক্সেসরিজ",o9:"অটো পার্টস",o10:"পাইকারি",
+o11:"সেবামূলক ব্যবসা",o12:"অন্যান্য",
+lSubmit:"ফ্রি ট্রায়ালের আবেদন",lNote:"নম্বরটি শুধু লগইন পাঠাতে ব্যবহার হবে। স্প্যাম নেই।",
+lSubmit2:"পার্টনার হওয়ার আবেদন",lNote2:"বিনিয়োগ লাগবে না। আমরা ফোন করে সব বুঝিয়ে বলব।",
+okT:"আবেদন পেয়েছি",okD:"দোকান যাচাই করে ১২ ঘণ্টার মধ্যে এসএমএসে লগইন পাঠাব।",
+okT2:"আবেদন পেয়েছি",okD2:"২৪ ঘণ্টার মধ্যে ফোন করে সব বুঝিয়ে বলব।",
+fTag:"যেখানেই ব্যবসা, সেখানেই শপ ম্যানেজমেন্ট",
+engPrep:"আপনার অ্যাপ প্রস্তুত হচ্ছে",engSub:"— যাতে লগইনের সাথে সাথেই খুলে যায়",
+engDone:"আপনার অ্যাপ প্রস্তুত",
+gateMsg:"সেটআপ শেষ হচ্ছে — এক মুহূর্ত…",gateMsg2:"সেটআপ শেষ হচ্ছে — এক মুহূর্ত…"};
+
+/* Numerals follow the language: 01..09 in English, ০১..০৯ in Bangla. */
+var BD="০১২৩৪৫৬৭৮৯";
+function num(s,bn){return bn?String(s).replace(/[0-9]/g,function(d){return BD[+d]}):String(s)}
+var nums=[].slice.call(document.querySelectorAll(".pnum i,.stp em"));
+var numsRaw=nums.map(function(e){return e.textContent});
+
+var ROT={en:["grocery shops","pharmacies","clothing stores","electronics shops","hardware stores",
+ "wholesalers","any shop that holds stock"],
+ bn:["মুদি দোকান","ফার্মেসি","কাপড়ের দোকান","ইলেকট্রনিক্স","হার্ডওয়্যার","পাইকারি ব্যবসা","যেকোনো দোকান"]};
+
+var EN={},lang="en";
+document.querySelectorAll("[data-t]").forEach(function(e){EN[e.dataset.t]=e.innerHTML});
+function setLang(L){
+ lang=L==="bn"?"bn":"en";var D=lang==="bn"?BN:EN;
+ document.querySelectorAll("[data-t]").forEach(function(e){var v=D[e.dataset.t];if(v!==undefined)e.innerHTML=v});
+ nums.forEach(function(e,i){e.textContent=num(numsRaw[i],lang==="bn")});
+ document.documentElement.lang=lang;
+ document.querySelectorAll(".lang button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.l===lang))});
+ ri=0;rot();try{localStorage.setItem("ms_lang",lang)}catch(e){}}
+document.querySelectorAll(".lang button").forEach(function(b){b.addEventListener("click",function(){setLang(b.dataset.l)})});
+
+var ri=0,rel=document.getElementById("rot");
+function rot(){if(rel)rel.textContent=ROT[lang][ri%ROT[lang].length]}
+setInterval(function(){ri++;rot()},2300);
+
+var io=new IntersectionObserver(function(en){en.forEach(function(x){
+ if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}})},
+ {threshold:.15,rootMargin:"0px 0px -5% 0px"});
+document.querySelectorAll(".rv").forEach(function(e){io.observe(e)});
+/* Safety net: reveal-on-scroll starts at opacity 0, so anything the observer
+   misses would be invisible content. Force everything visible after 2.5s. */
+/* Scroll-driven reveal: the IntersectionObserver above is kept as a fast path,
+   but this guarantees content is never left invisible. */
+function revealRv(){var vh=window.innerHeight;
+ document.querySelectorAll(".rv:not(.in)").forEach(function(e){
+  var r=e.getBoundingClientRect();
+  if(r.top<vh*0.92&&r.bottom>0)e.classList.add("in")})}
+window.addEventListener("scroll",revealRv,{passive:true});
+revealRv();setTimeout(revealRv,300);setTimeout(function(){document.querySelectorAll(".rv").forEach(function(e){e.classList.add("in")})},2500);
+
+var scs=document.querySelectorAll(".sc"),rail=document.querySelectorAll(".rail b"),ph=document.getElementById("ph"),cur=-1;
+function show(i){
+ if(i===cur)return;cur=i;
+ scs.forEach(function(s,n){s.classList.toggle("on",n===i)});
+ rail.forEach(function(b,n){b.classList.toggle("on",n===i)});
+ if(ph&&window.innerWidth>1000){ph.classList.add("tilt");clearTimeout(ph._t);
+  ph._t=setTimeout(function(){ph.classList.remove("tilt")},760)}
+}
+var panels=[].slice.call(document.querySelectorAll(".panel")),last=0;
+
+/* Mobile relocates each app screen out of the phone frame and into its own
+   panel, where it becomes a full-width inline card. Desktop puts them back in
+   the frame. One set of markup, two genuinely different layouts. */
+var vp=document.querySelector(".vp"),isMob=null;
+function relayout(){
+ var m=window.innerWidth<=1000;
+ if(m===isMob)return;
+ isMob=m;
+ scs.forEach(function(s,i){
+  var host=m?document.querySelector('.panel[data-s="'+i+'"]'):vp;
+  if(host&&s.parentNode!==host)host.appendChild(s);
+  s.classList.toggle("on",m?false:i===0);
+ });
+ if(m){
+  /* Reveal is driven by the scroll handler, not IntersectionObserver. The
+     observer proved unreliable here (it also left the .rv sections invisible),
+     and the scroll path is already exercised on every frame. Inline styles so
+     nothing in the cascade can outrank them. */
+  /* Registered BEFORE anything that could throw: content visibility must never
+     depend on later code succeeding. */
+  setTimeout(function(){scs.forEach(reveal)},1400);
+  try{pickMobile()}catch(e){console.warn("pickMobile",e);scs.forEach(reveal)}
+ }else{
+  scs.forEach(function(s){s.style.opacity="";s.style.transform=""});
+  cur=-1;pick();
+ }
+}
+window.addEventListener("resize",relayout);
+
+function reveal(s){s.classList.add("on");s.classList.add("enter");s.style.opacity="";s.style.transform=""}
+function pickMobile(){
+ var vh=window.innerHeight;
+ scs.forEach(function(s){
+  var r=s.getBoundingClientRect();
+  if(r.top<vh*0.94&&r.bottom>0)reveal(s);
+ });
+}
+function pick(){
+ if(isMob){pickMobile();return}
+ var mid=window.innerHeight*(window.innerWidth>1000?.5:.66),best=0,bd=1/0;
+ for(var n=0;n<panels.length;n++){
+  var r=panels[n].getBoundingClientRect(),d=Math.abs(r.top+r.height/2-mid);
+  if(d<bd){bd=d;best=n}
+ }
+ show(best);
+}
+/* Plain throttled scroll handler, not requestAnimationFrame: rAF is starved in
+   throttled tabs, which previously froze the phone on the first screen. */
+function onScroll(){
+ var hd=document.getElementById("hd");
+ if(hd)hd.classList.toggle("stuck",window.scrollY>12);
+ var t=Date.now();if(t-last<60)return;last=t;pick()}
+window.addEventListener("scroll",onScroll,{passive:true});
+window.addEventListener("resize",onScroll);
+relayout();
+
+document.querySelectorAll(".path").forEach(function(p){
+ var open=function(){
+  document.querySelectorAll(".path").forEach(function(o){o.classList.remove("sel")});
+  p.classList.add("sel");
+  document.querySelectorAll(".fbox").forEach(function(b){b.classList.remove("show")});
+  var box=document.getElementById("box-"+p.dataset.form);box.classList.add("show");
+  setTimeout(function(){box.scrollIntoView({behavior:"smooth",block:"center"})},70);
+ };
+ p.addEventListener("click",open);
+ p.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
+});
+
+/* ============ background engine warm-up ============
+   While the visitor reads this page, the Flutter bundle downloads in the
+   background so Login opens instantly. Progress is measured by reading each
+   response stream — real bytes, not a timer pretending to be one.
+
+   Skipped on data-saver or 2G/3G: pushing ~2.4 MB at the exact users this
+   static page exists to protect would be self-defeating. */
+var ENG={ready:false,skipped:false};
+function gateSync(){
+ document.querySelectorAll(".sbm").forEach(function(b){b.classList.toggle("wait",!ENG.ready)});
+ if(ENG.ready)document.querySelectorAll(".gate").forEach(function(g){g.classList.remove("show")});
+}
+(function warm(){
+ var eng=document.getElementById("eng"),bar=document.getElementById("engbar"),
+     pctEl=document.getElementById("engpct"),txt=document.getElementById("engtxt");
+ if(!eng)return;
+ var c=navigator.connection||{},
+     slow=c.saveData===true||/2g/.test(c.effectiveType||"")||c.effectiveType==="3g";
+ function finish(){
+  if(ENG.ready)return;
+  ENG.ready=true;bar.style.width="100%";pctEl.textContent="100%";
+  eng.classList.add("ready");
+  /* Was T[lang] — a variable that does not exist here (the dictionaries are
+     EN/BN). It threw a ReferenceError right after the bar hit 100%, so the
+     hide timers below were never registered and the bar stayed on screen. */
+  txt.innerHTML="<b>"+((lang==="bn"&&BN.engDone)||"Your app is ready")+"</b>";
+  document.body.classList.remove("warming");
+  setTimeout(function(){eng.classList.add("done")},900);
+  /* Hard removal: hidden, then detached. Nothing left to see or scroll past. */
+  setTimeout(function(){eng.classList.add("gone");if(eng.parentNode)eng.parentNode.removeChild(eng)},1600);
+  gateSync();
+ }
+ if(slow){ENG.skipped=true;finish();return}
+
+ var ASSETS=["app.html","flutter.js","main.dart.mjs","main.dart.wasm"];
+ var loaded=0,total=0,sizes={};
+ function paint(){
+  var p=total?Math.min(99,Math.round(loaded/total*100)):0;
+  bar.style.width=p+"%";pctEl.textContent=p+"%";
+ }
+ Promise.all(ASSETS.map(function(u){
+  return fetch(u,{method:"HEAD"}).then(function(r){
+   sizes[u]=parseInt(r.headers.get("content-length")||"0",10)||0;total+=sizes[u];
+  }).catch(function(){sizes[u]=0});
+ })).then(function(){
+  if(!total){finish();return}
+  eng.classList.add("show");document.body.classList.add("warming");paint();
+  return ASSETS.reduce(function(chain,u){
+   return chain.then(function(){
+    return fetch(u).then(function(r){
+     if(!r.body||!r.body.getReader){loaded+=sizes[u];paint();return}
+     var rd=r.body.getReader();
+     return (function pump(){return rd.read().then(function(x){
+      if(x.done)return;loaded+=x.value.length;paint();return pump()})})();
+    }).catch(function(){loaded+=sizes[u];paint()});
+   });
+  },Promise.resolve());
+ }).then(finish).catch(finish);
+ setTimeout(finish,45000);   /* never trap anyone behind a stalled download */
+})();
+
+var SB="https://bbakhsopiqsgollwjeqy.supabase.co";
+var KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWtoc29waXFzZ29sbHdqZXF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMjE3MTMsImV4cCI6MjA3NTg5NzcxM30.kUg1REv9PBVvOxmyzgY10YM6IMU_D8KMpRV_ZXBXUtc";
+var ERR={en:{n:"Please enter your name",b:"Please choose your business type",p:"Enter a valid mobile number",f:"Could not send. Please try again."},
+ bn:{n:"নাম লিখুন",b:"ব্যবসার ধরন বেছে নিন",p:"সঠিক মোবাইল নম্বর দিন",f:"পাঠানো যায়নি। আবার চেষ্টা করুন।"}};
+function docId(){var c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",s="",a=new Uint32Array(24);
+ crypto.getRandomValues(a);for(var i=0;i<24;i++)s+=c[a[i]%c.length];return s}
+function normPhone(r){var c=String(r||"").replace(/[\s\-()]/g,""),d=c.replace(/[^\d]/g,"");
+ if(d.length<9||d.length>15)return null;
+ if(!/^\+?[0-9]{9,15}$/.test(c))return null;
+ return c[0]==="0"?"+880"+c.slice(1):(c[0]==="+"?c:"+"+c)}
+function post(t,b){return fetch(SB+"/rest/v1/"+t,{method:"POST",
+ headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
+ body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw new Error(t)})}
+function wire(id,kind){
+ var f=document.getElementById(id);
+ f.addEventListener("submit",function(ev){ev.preventDefault();
+  var E=ERR[lang],ok=true,q=function(n){return f.querySelector('[name="'+n+'"]')};
+  var err=function(el,m){el.parentNode.querySelector(".er").textContent=m||""};
+  var nm=q("name"),p2=q("phone"),ex=kind==="partner"?q("shops"):q("business");
+  err(nm,"");err(p2,"");err(ex,"");
+  if(nm.value.trim().length<2){err(nm,E.n);ok=false}
+  if(kind!=="partner"&&!ex.value){err(ex,E.b);ok=false}
+  var p=normPhone(p2.value);if(!p){err(p2,E.p);ok=false}
+  if(!ok)return;
+  /* Requested: hold the submit until the app bundle is warm. Never permanent —
+     warm() always resolves, and on slow connections it is skipped outright. */
+  if(!ENG.ready){f.querySelectorAll(".gate").forEach(function(g){g.classList.add("show")});return}
+  var btn=f.querySelector(".sbm");btn.disabled=true;var now=new Date().toISOString();
+  var attrs=kind==="partner"
+   ?{request_type:"partner",shop_count:parseInt(ex.value,10)||1,request_date:now,source:"web"}
+   :{request_type:"shop_owner",business_type:ex.value,request_date:now,source:"web_trial"};
+  post("registered_users",{doc_id:docId(),id:"PENDING_"+Date.now(),phone:p,name:nm.value.trim(),
+   email:null,password:null,is_main_app_user:kind!=="partner",is_partner_app_user:true,
+   attributes:attrs,is_active:true,is_verified:false,created_at:now,updated_at:now,added_by_id:"self"})
+  .then(function(){return (kind==="partner"
+    ?post("partner_requests",{name:nm.value.trim(),phone_number:p,shop_count:attrs.shop_count,created_at:now,contacted:false})
+    :post("contact_requests",{name:nm.value.trim(),phone_number:p,business_type:attrs.business_type,created_at:now,contacted:false})
+   ).catch(function(e){console.warn("legacy insert failed",e)})})
+  .then(function(){f.classList.add("sent")})
+  .catch(function(){btn.disabled=false;err(p2,ERR[lang].f)});
+ });
+}
+wire("fown","owner");wire("fptr","partner");
+document.querySelectorAll("[data-go]").forEach(function(b){b.addEventListener("click",function(){
+ document.querySelector(b.dataset.go).scrollIntoView({behavior:"smooth"})})});
+document.getElementById("yr").textContent=new Date().getFullYear();
+try{var s=localStorage.getItem("ms_lang");if(s)setLang(s)}catch(e){}
+rot();
+gateSync();
+})();
+</script>
+</body>
+</html>
